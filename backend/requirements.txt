@@ -1,0 +1,23 @@
+# Core requirements (essential)
+Flask==2.3.3
+Flask-CORS==4.0.0
+python-dotenv==1.0.0
+supabase==2.0.2
+requests==2.31.0
+python-multipart==0.0.6
+Werkzeug==2.3.7
+cloudinary==1.36.0
+
+# Optional requirements (install as needed)
+# gunicorn==21.2.0
+# Pillow>=9.5.0
+# python-json-logger==2.0.7
+# flask-limiter==3.5.0
+# flask-compress==1.14
+# marshmallow==3.20.1
+# uuid==1.30
+
+# Testing requirements (install for development)
+# pytest==7.4.3
+# pytest-cov==4.1.0
+# pytest-mock==3.12.0 

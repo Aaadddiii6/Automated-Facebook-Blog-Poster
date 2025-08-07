@@ -1,0 +1,788 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Content Generation - Blog Automation</title>
+    <style>
+      * {
+        margin: 0;
+        padding: 0;
+        box-sizing: border-box;
+      }
+
+      body {
+        font-family: "Segoe UI", Tahoma, Geneva, Verdana, sans-serif;
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        min-height: 100vh;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        padding: 20px;
+      }
+
+      .container {
+        background: white;
+        border-radius: 20px;
+        box-shadow: 0 20px 40px rgba(0, 0, 0, 0.1);
+        padding: 40px;
+        max-width: 700px;
+        width: 100%;
+      }
+
+      .header {
+        text-align: center;
+        margin-bottom: 30px;
+      }
+
+      .header h1 {
+        color: #333;
+        font-size: 2.5rem;
+        margin-bottom: 10px;
+      }
+
+      .header p {
+        color: #666;
+        font-size: 1.1rem;
+      }
+
+      .mode-toggle {
+        display: flex;
+        background: #f8f9fa;
+        border-radius: 15px;
+        padding: 5px;
+        margin-bottom: 30px;
+        gap: 5px;
+      }
+
+      .mode-btn {
+        flex: 1;
+        padding: 12px 20px;
+        border: none;
+        border-radius: 10px;
+        background: transparent;
+        color: #666;
+        font-weight: 600;
+        cursor: pointer;
+        transition: all 0.3s ease;
+      }
+
+      .mode-btn.active {
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        color: white;
+        box-shadow: 0 4px 15px rgba(102, 126, 234, 0.3);
+      }
+
+      .mode-btn:hover:not(.active) {
+        background: #e9ecef;
+        color: #333;
+      }
+
+      .upload-area {
+        border: 3px dashed #ddd;
+        border-radius: 15px;
+        padding: 40px;
+        text-align: center;
+        transition: all 0.3s ease;
+        cursor: pointer;
+        margin-bottom: 30px;
+      }
+
+      .upload-area:hover {
+        border-color: #667eea;
+        background-color: #f8f9ff;
+      }
+
+      .upload-area.dragover {
+        border-color: #667eea;
+        background-color: #f0f4ff;
+        transform: scale(1.02);
+      }
+
+      .upload-icon {
+        font-size: 4rem;
+        color: #667eea;
+        margin-bottom: 20px;
+      }
+
+      .upload-text {
+        font-size: 1.2rem;
+        color: #333;
+        margin-bottom: 10px;
+      }
+
+      .upload-subtext {
+        color: #666;
+        font-size: 0.9rem;
+      }
+
+      .meeting-id-area {
+        background: #f8f9ff;
+        border: 2px solid #667eea;
+        border-radius: 15px;
+        padding: 30px;
+        text-align: center;
+        margin-bottom: 30px;
+      }
+
+      .meeting-id-icon {
+        font-size: 3rem;
+        color: #667eea;
+        margin-bottom: 15px;
+      }
+
+      .meeting-id-text {
+        font-size: 1.1rem;
+        color: #333;
+        margin-bottom: 10px;
+      }
+
+      .meeting-id-subtext {
+        color: #666;
+        font-size: 0.9rem;
+        margin-bottom: 20px;
+      }
+
+      .file-input {
+        display: none;
+      }
+
+      .form-group {
+        margin-bottom: 20px;
+      }
+
+      .form-group label {
+        display: block;
+        margin-bottom: 8px;
+        color: #333;
+        font-weight: 600;
+      }
+
+      .form-group input,
+      .form-group textarea,
+      .form-group select {
+        width: 100%;
+        padding: 12px 15px;
+        border: 2px solid #ddd;
+        border-radius: 10px;
+        font-size: 1rem;
+        transition: border-color 0.3s ease;
+      }
+
+      .form-group input:focus,
+      .form-group textarea:focus,
+      .form-group select:focus {
+        outline: none;
+        border-color: #667eea;
+      }
+
+      .form-group textarea {
+        resize: vertical;
+        min-height: 100px;
+      }
+
+      .submit-btn {
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        color: white;
+        border: none;
+        padding: 15px 30px;
+        border-radius: 10px;
+        font-size: 1.1rem;
+        font-weight: 600;
+        cursor: pointer;
+        transition: all 0.3s ease;
+        width: 100%;
+      }
+
+      .submit-btn:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 10px 20px rgba(102, 126, 234, 0.3);
+      }
+
+      .submit-btn:disabled {
+        background: #ccc;
+        cursor: not-allowed;
+        transform: none;
+        box-shadow: none;
+      }
+
+      .progress-container {
+        display: none;
+        margin-top: 20px;
+      }
+
+      .progress-bar {
+        width: 100%;
+        height: 8px;
+        background-color: #f0f0f0;
+        border-radius: 4px;
+        overflow: hidden;
+        margin-bottom: 10px;
+      }
+
+      .progress-fill {
+        height: 100%;
+        background: linear-gradient(90deg, #667eea, #764ba2);
+        width: 0%;
+        transition: width 0.3s ease;
+      }
+
+      .progress-text {
+        text-align: center;
+        color: #666;
+        font-size: 0.9rem;
+      }
+
+      .status-container {
+        margin-top: 20px;
+        padding: 15px;
+        border-radius: 10px;
+        display: none;
+      }
+
+      .status-success {
+        background-color: #d4edda;
+        color: #155724;
+        border: 1px solid #c3e6cb;
+      }
+
+      .status-error {
+        background-color: #f8d7da;
+        color: #721c24;
+        border: 1px solid #f5c6cb;
+      }
+
+      .status-info {
+        background-color: #d1ecf1;
+        color: #0c5460;
+        border: 1px solid #bee5eb;
+      }
+
+      .file-info {
+        display: none;
+        margin-top: 20px;
+        padding: 15px;
+        background-color: #f8f9fa;
+        border-radius: 10px;
+        border-left: 4px solid #667eea;
+      }
+
+      .file-info h4 {
+        color: #333;
+        margin-bottom: 10px;
+      }
+
+      .file-details {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 10px;
+        font-size: 0.9rem;
+      }
+
+      .file-detail {
+        color: #666;
+      }
+
+      .file-detail strong {
+        color: #333;
+      }
+
+      .loading {
+        display: inline-block;
+        width: 20px;
+        height: 20px;
+        border: 3px solid #f3f3f3;
+        border-top: 3px solid #667eea;
+        border-radius: 50%;
+        animation: spin 1s linear infinite;
+        margin-right: 10px;
+      }
+
+      @keyframes spin {
+        0% {
+          transform: rotate(0deg);
+        }
+        100% {
+          transform: rotate(360deg);
+        }
+      }
+
+      .dashboard-link {
+        text-align: center;
+        margin-top: 20px;
+      }
+
+      .dashboard-link a {
+        color: #667eea;
+        text-decoration: none;
+        font-weight: 600;
+      }
+
+      .dashboard-link a:hover {
+        text-decoration: underline;
+      }
+
+      .hidden {
+        display: none !important;
+      }
+
+      @media (max-width: 768px) {
+        .container {
+          padding: 20px;
+        }
+
+        .header h1 {
+          font-size: 2rem;
+        }
+
+        .upload-area {
+          padding: 30px 20px;
+        }
+
+        .file-details {
+          grid-template-columns: 1fr;
+        }
+      }
+    </style>
+  </head>
+  <body>
+    <div class="container">
+      <div class="header">
+        <h1>🎥 Content Generation</h1>
+        <p>
+          Upload a video or enter a meeting ID to generate blog posts and social
+          media content
+        </p>
+      </div>
+
+      <div class="mode-toggle">
+        <button
+          class="mode-btn active"
+          id="videoModeBtn"
+          onclick="switchMode('video')"
+        >
+          📹 Video Upload
+        </button>
+        <button
+          class="mode-btn"
+          id="meetingModeBtn"
+          onclick="switchMode('meeting')"
+        >
+          🆔 Meeting ID
+        </button>
+      </div>
+
+      <!-- Video Upload Form -->
+      <form id="videoUploadForm">
+        <div class="upload-area" id="uploadArea">
+          <div class="upload-icon">📁</div>
+          <div class="upload-text">Drop your video file here</div>
+          <div class="upload-subtext">or click to browse</div>
+          <input
+            type="file"
+            id="videoFile"
+            class="file-input"
+            accept="video/*"
+            required
+          />
+        </div>
+
+        <div class="file-info" id="fileInfo">
+          <h4>📋 File Information</h4>
+          <div class="file-details">
+            <div class="file-detail">
+              <strong>Name:</strong> <span id="fileName"></span>
+            </div>
+            <div class="file-detail">
+              <strong>Size:</strong> <span id="fileSize"></span>
+            </div>
+            <div class="file-detail">
+              <strong>Type:</strong> <span id="fileType"></span>
+            </div>
+            <div class="file-detail">
+              <strong>Duration:</strong> <span id="fileDuration"></span>
+            </div>
+          </div>
+        </div>
+
+        <div class="form-group">
+          <label for="videoMeetingTitle">Meeting Title *</label>
+          <input
+            type="text"
+            id="videoMeetingTitle"
+            name="title"
+            required
+            placeholder="Enter meeting title"
+          />
+        </div>
+
+        <div class="form-group">
+          <label for="videoMeetingDescription">Description</label>
+          <textarea
+            id="videoMeetingDescription"
+            name="description"
+            placeholder="Brief description of the meeting"
+          ></textarea>
+        </div>
+
+        <div class="form-group">
+          <label for="videoOrganizationId">Organization ID *</label>
+          <input
+            type="text"
+            id="videoOrganizationId"
+            name="organizationId"
+            required
+            placeholder="Enter your organization ID"
+            value="123e4567-e89b-12d3-a456-426614174000"
+          />
+        </div>
+
+        <div class="form-group">
+          <label for="zoomMeetingId">Zoom Meeting ID (Optional)</label>
+          <input
+            type="text"
+            id="zoomMeetingId"
+            name="zoomMeetingId"
+            placeholder="Zoom meeting ID if available"
+          />
+        </div>
+
+        <button type="submit" class="submit-btn" id="videoUploadBtn">
+          <span id="videoUploadBtnText">🚀 Start Processing</span>
+        </button>
+      </form>
+
+      <!-- Meeting ID Form -->
+      <form id="meetingIdForm" class="hidden">
+        <div class="meeting-id-area">
+          <div class="meeting-id-icon">🆔</div>
+          <div class="meeting-id-text">Enter Meeting ID</div>
+          <div class="meeting-id-subtext">
+            Provide a meeting ID to fetch transcript from Supabase and generate
+            content
+          </div>
+        </div>
+
+        <div class="form-group">
+          <label for="meetingId">Meeting ID *</label>
+          <input
+            type="text"
+            id="meetingId"
+            name="meetingId"
+            required
+            placeholder="Enter the meeting ID from Supabase"
+          />
+        </div>
+
+        <div class="form-group">
+          <label for="meetingIdOrganizationId">Organization ID *</label>
+          <input
+            type="text"
+            id="meetingIdOrganizationId"
+            name="organizationId"
+            required
+            placeholder="Enter your organization ID"
+            value="123e4567-e89b-12d3-a456-426614174000"
+          />
+        </div>
+
+        <button type="submit" class="submit-btn" id="meetingIdBtn">
+          <span id="meetingIdBtnText">🚀 Generate Content</span>
+        </button>
+      </form>
+
+      <div class="progress-container" id="progressContainer">
+        <div class="progress-bar">
+          <div class="progress-fill" id="progressFill"></div>
+        </div>
+        <div class="progress-text" id="progressText">Processing...</div>
+      </div>
+
+      <div class="status-container" id="statusContainer"></div>
+
+      <div class="dashboard-link">
+        <a href="/dashboard" id="dashboardLink" style="display: none"
+          >📊 View Dashboard</a
+        >
+      </div>
+    </div>
+
+    <script>
+      let currentMode = "video";
+
+      // Mode switching
+      function switchMode(mode) {
+        currentMode = mode;
+
+        // Update button states
+        document
+          .getElementById("videoModeBtn")
+          .classList.toggle("active", mode === "video");
+        document
+          .getElementById("meetingModeBtn")
+          .classList.toggle("active", mode === "meeting");
+
+        // Show/hide forms
+        document
+          .getElementById("videoUploadForm")
+          .classList.toggle("hidden", mode !== "video");
+        document
+          .getElementById("meetingIdForm")
+          .classList.toggle("hidden", mode !== "meeting");
+
+        // Reset forms and status
+        resetForms();
+      }
+
+      function resetForms() {
+        // Reset video form
+        document.getElementById("videoUploadForm").reset();
+        document.getElementById("fileInfo").style.display = "none";
+
+        // Reset meeting ID form
+        document.getElementById("meetingIdForm").reset();
+
+        // Hide status and progress
+        hideStatus();
+        document.getElementById("progressContainer").style.display = "none";
+        document.getElementById("dashboardLink").style.display = "none";
+      }
+
+      // Video upload functionality
+      const uploadArea = document.getElementById("uploadArea");
+      const fileInput = document.getElementById("videoFile");
+      const videoUploadForm = document.getElementById("videoUploadForm");
+      const videoUploadBtn = document.getElementById("videoUploadBtn");
+      const videoUploadBtnText = document.getElementById("videoUploadBtnText");
+
+      // Drag and drop functionality
+      uploadArea.addEventListener("dragover", (e) => {
+        e.preventDefault();
+        uploadArea.classList.add("dragover");
+      });
+
+      uploadArea.addEventListener("dragleave", () => {
+        uploadArea.classList.remove("dragover");
+      });
+
+      uploadArea.addEventListener("drop", (e) => {
+        e.preventDefault();
+        uploadArea.classList.remove("dragover");
+        const files = e.dataTransfer.files;
+        if (files.length > 0) {
+          fileInput.files = files;
+          handleFileSelect(files[0]);
+        }
+      });
+
+      uploadArea.addEventListener("click", () => {
+        fileInput.click();
+      });
+
+      fileInput.addEventListener("change", (e) => {
+        if (e.target.files.length > 0) {
+          handleFileSelect(e.target.files[0]);
+        }
+      });
+
+      function handleFileSelect(file) {
+        // Validate file type
+        if (!file.type.startsWith("video/")) {
+          showStatus("Please select a valid video file.", "error");
+          return;
+        }
+
+        // Validate file size (500MB limit)
+        const maxSize = 500 * 1024 * 1024; // 500MB
+        if (file.size > maxSize) {
+          showStatus("File size exceeds 500MB limit.", "error");
+          return;
+        }
+
+        // Display file information
+        document.getElementById("fileName").textContent = file.name;
+        document.getElementById("fileSize").textContent = formatFileSize(
+          file.size
+        );
+        document.getElementById("fileType").textContent = file.type;
+        document.getElementById("fileDuration").textContent = "Processing...";
+
+        document.getElementById("fileInfo").style.display = "block";
+
+        // Try to get video duration
+        const video = document.createElement("video");
+        video.preload = "metadata";
+        video.onloadedmetadata = () => {
+          document.getElementById("fileDuration").textContent = formatDuration(
+            video.duration
+          );
+        };
+        video.src = URL.createObjectURL(file);
+      }
+
+      // Meeting ID form
+      const meetingIdForm = document.getElementById("meetingIdForm");
+      const meetingIdBtn = document.getElementById("meetingIdBtn");
+      const meetingIdBtnText = document.getElementById("meetingIdBtnText");
+
+      // Video upload form submission
+      videoUploadForm.addEventListener("submit", async (e) => {
+        e.preventDefault();
+
+        const formData = new FormData();
+        const videoFile = fileInput.files[0];
+
+        if (!videoFile) {
+          showStatus("Please select a video file.", "error");
+          return;
+        }
+
+        formData.append("video", videoFile);
+        formData.append(
+          "meeting_title",
+          document.getElementById("videoMeetingTitle").value
+        );
+        formData.append(
+          "meeting_description",
+          document.getElementById("videoMeetingDescription").value
+        );
+        formData.append(
+          "organization_id",
+          document.getElementById("videoOrganizationId").value
+        );
+        formData.append(
+          "zoom_meeting_id",
+          document.getElementById("zoomMeetingId").value
+        );
+
+        // Disable form and show progress
+        videoUploadBtn.disabled = true;
+        videoUploadBtnText.innerHTML =
+          '<span class="loading"></span>Processing...';
+        document.getElementById("progressContainer").style.display = "block";
+        hideStatus();
+
+        try {
+          const response = await fetch("/api/upload", {
+            method: "POST",
+            body: formData,
+          });
+
+          const result = await response.json();
+
+          if (response.ok) {
+            showStatus(
+              `✅ Video uploaded successfully! Meeting ID: ${result.data.meeting_id}`,
+              "success"
+            );
+            document.getElementById("progressFill").style.width = "100%";
+            document.getElementById("progressText").textContent =
+              "Upload completed!";
+            document.getElementById("dashboardLink").style.display = "inline";
+          } else {
+            throw new Error(result.error || "Upload failed");
+          }
+        } catch (error) {
+          showStatus(`❌ Error: ${error.message}`, "error");
+          document.getElementById("progressFill").style.width = "0%";
+          document.getElementById("progressText").textContent = "Upload failed";
+        } finally {
+          videoUploadBtn.disabled = false;
+          videoUploadBtnText.textContent = "🚀 Start Processing";
+        }
+      });
+
+      // Meeting ID form submission
+      meetingIdForm.addEventListener("submit", async (e) => {
+        e.preventDefault();
+
+        const meetingId = document.getElementById("meetingId").value;
+        const organizationId = document.getElementById(
+          "meetingIdOrganizationId"
+        ).value;
+
+        if (!meetingId) {
+          showStatus("Please enter a meeting ID.", "error");
+          return;
+        }
+
+        // Disable form and show progress
+        meetingIdBtn.disabled = true;
+        meetingIdBtnText.innerHTML =
+          '<span class="loading"></span>Processing...';
+        document.getElementById("progressContainer").style.display = "block";
+        hideStatus();
+
+        try {
+          const response = await fetch("/api/process-meeting", {
+            method: "POST",
+            headers: {
+              "Content-Type": "application/json",
+            },
+            body: JSON.stringify({
+              meeting_id: meetingId,
+              organization_id: organizationId,
+            }),
+          });
+
+          const result = await response.json();
+
+          if (response.ok) {
+            showStatus(
+              `✅ Content generation started! Meeting ID: ${result.data.meeting_id}`,
+              "success"
+            );
+            document.getElementById("progressFill").style.width = "100%";
+            document.getElementById("progressText").textContent =
+              "Processing completed!";
+            document.getElementById("dashboardLink").style.display = "inline";
+          } else {
+            throw new Error(result.error || "Processing failed");
+          }
+        } catch (error) {
+          showStatus(`❌ Error: ${error.message}`, "error");
+          document.getElementById("progressFill").style.width = "0%";
+          document.getElementById("progressText").textContent =
+            "Processing failed";
+        } finally {
+          meetingIdBtn.disabled = false;
+          meetingIdBtnText.textContent = "🚀 Generate Content";
+        }
+      });
+
+      function formatFileSize(bytes) {
+        if (bytes === 0) return "0 Bytes";
+        const k = 1024;
+        const sizes = ["Bytes", "KB", "MB", "GB"];
+        const i = Math.floor(Math.log(bytes) / Math.log(k));
+        return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + " " + sizes[i];
+      }
+
+      function formatDuration(seconds) {
+        if (!seconds) return "Unknown";
+        const hours = Math.floor(seconds / 3600);
+        const minutes = Math.floor((seconds % 3600) / 60);
+        const secs = Math.floor(seconds % 60);
+
+        if (hours > 0) {
+          return `${hours}:${minutes.toString().padStart(2, "0")}:${secs
+            .toString()
+            .padStart(2, "0")}`;
+        } else {
+          return `${minutes}:${secs.toString().padStart(2, "0")}`;
+        }
+      }
+
+      function showStatus(message, type) {
+        const statusContainer = document.getElementById("statusContainer");
+        statusContainer.textContent = message;
+        statusContainer.className = `status-container status-${type}`;
+        statusContainer.style.display = "block";
+      }
+
+      function hideStatus() {
+        document.getElementById("statusContainer").style.display = "none";
+      }
+    </script>
+  </body>
+</html>

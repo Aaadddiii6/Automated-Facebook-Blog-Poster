@@ -1,0 +1,348 @@
+{
+  "name": "Video-to-Blog Automation",
+  "description": "Automated workflow to convert Zoom meeting videos into blog posts and social media content",
+  "version": "1.0.0",
+  "triggers": [
+    {
+      "type": "webhook",
+      "name": "Video Upload Trigger",
+      "description": "Triggered when a video is uploaded to the system",
+      "endpoint": "/webhook/video-upload",
+      "method": "POST",
+      "expected_payload": {
+        "meeting_id": "uuid",
+        "video_id": "uuid",
+        "file_path": "string",
+        "file_name": "string",
+        "organization_id": "uuid",
+        "timestamp": "ISO 8601 date string"
+      }
+    }
+  ],
+  "modules": [
+    {
+      "id": "assembly_ai_transcription",
+      "name": "Assembly AI Transcription",
+      "type": "http_request",
+      "description": "Send video to Assembly AI for transcription",
+      "config": {
+        "method": "POST",
+        "url": "https://api.assemblyai.com/v2/upload",
+        "headers": {
+          "Authorization": "{{ASSEMBLY_AI_API_KEY}}",
+          "Content-Type": "application/json"
+        },
+        "body": {
+          "url": "{{file_path}}"
+        }
+      },
+      "output_mapping": {
+        "upload_url": "{{response.upload_url}}"
+      }
+    },
+    {
+      "id": "assembly_ai_transcribe",
+      "name": "Start Transcription",
+      "type": "http_request",
+      "description": "Start transcription process with Assembly AI",
+      "config": {
+        "method": "POST",
+        "url": "https://api.assemblyai.com/v2/transcript",
+        "headers": {
+          "Authorization": "{{ASSEMBLY_AI_API_KEY}}",
+          "Content-Type": "application/json"
+        },
+        "body": {
+          "audio_url": "{{upload_url}}",
+          "speaker_labels": true,
+          "auto_chapters": true,
+          "entity_detection": true,
+          "auto_highlights": true
+        }
+      },
+      "output_mapping": {
+        "transcript_id": "{{response.id}}"
+      }
+    },
+    {
+      "id": "check_transcription_status",
+      "name": "Check Transcription Status",
+      "type": "http_request",
+      "description": "Poll Assembly AI for transcription completion",
+      "config": {
+        "method": "GET",
+        "url": "https://api.assemblyai.com/v2/transcript/{{transcript_id}}",
+        "headers": {
+          "Authorization": "{{ASSEMBLY_AI_API_KEY}}"
+        }
+      },
+      "output_mapping": {
+        "status": "{{response.status}}",
+        "transcript": "{{response.text}}",
+        "chapters": "{{response.chapters}}",
+        "highlights": "{{response.auto_highlights_result}}",
+        "entities": "{{response.entities}}"
+      }
+    },
+    {
+      "id": "openai_blog_generation",
+      "name": "OpenAI Blog Generation",
+      "type": "http_request",
+      "description": "Generate blog content using OpenAI GPT",
+      "config": {
+        "method": "POST",
+        "url": "https://api.openai.com/v1/chat/completions",
+        "headers": {
+          "Authorization": "Bearer {{OPENAI_API_KEY}}",
+          "Content-Type": "application/json"
+        },
+        "body": {
+          "model": "gpt-4",
+          "messages": [
+            {
+              "role": "system",
+              "content": "You are a professional content writer who creates engaging blog posts from meeting transcripts. Create a well-structured blog post with a compelling title, introduction, main content with key points, and conclusion. Include relevant hashtags and keywords."
+            },
+            {
+              "role": "user",
+              "content": "Create a blog post from this meeting transcript: {{transcript}}\n\nMeeting title: {{meeting_title}}\n\nKey highlights: {{highlights}}\n\nChapters: {{chapters}}"
+            }
+          ],
+          "max_tokens": 2000,
+          "temperature": 0.7
+        }
+      },
+      "output_mapping": {
+        "blog_content": "{{response.choices[0].message.content}}"
+      }
+    },
+    {
+      "id": "openai_summary_generation",
+      "name": "Generate Summary",
+      "type": "http_request",
+      "description": "Generate a concise summary of the blog post",
+      "config": {
+        "method": "POST",
+        "url": "https://api.openai.com/v1/chat/completions",
+        "headers": {
+          "Authorization": "Bearer {{OPENAI_API_KEY}}",
+          "Content-Type": "application/json"
+        },
+        "body": {
+          "model": "gpt-3.5-turbo",
+          "messages": [
+            {
+              "role": "system",
+              "content": "Create a concise 2-3 sentence summary of the following blog post content."
+            },
+            {
+              "role": "user",
+              "content": "{{blog_content}}"
+            }
+          ],
+          "max_tokens": 150,
+          "temperature": 0.5
+        }
+      },
+      "output_mapping": {
+        "summary": "{{response.choices[0].message.content}}"
+      }
+    },
+    {
+      "id": "openai_keywords_extraction",
+      "name": "Extract Keywords",
+      "type": "http_request",
+      "description": "Extract relevant keywords and hashtags",
+      "config": {
+        "method": "POST",
+        "url": "https://api.openai.com/v1/chat/completions",
+        "headers": {
+          "Authorization": "Bearer {{OPENAI_API_KEY}}",
+          "Content-Type": "application/json"
+        },
+        "body": {
+          "model": "gpt-3.5-turbo",
+          "messages": [
+            {
+              "role": "system",
+              "content": "Extract 5-10 relevant keywords and hashtags from the blog content. Return as a JSON array of strings."
+            },
+            {
+              "role": "user",
+              "content": "{{blog_content}}"
+            }
+          ],
+          "max_tokens": 200,
+          "temperature": 0.3
+        }
+      },
+      "output_mapping": {
+        "keywords": "{{JSON.parse(response.choices[0].message.content)}}"
+      }
+    },
+    {
+      "id": "facebook_post_creation",
+      "name": "Create Facebook Post",
+      "type": "http_request",
+      "description": "Post blog content to Facebook page",
+      "config": {
+        "method": "POST",
+        "url": "https://graph.facebook.com/v18.0/{{FACEBOOK_PAGE_ID}}/feed",
+        "headers": {
+          "Content-Type": "application/json"
+        },
+        "body": {
+          "message": "{{summary}}\n\nRead the full article: [Link to be added]\n\n{{keywords.join(' ')}}",
+          "access_token": "{{FACEBOOK_ACCESS_TOKEN}}"
+        }
+      },
+      "output_mapping": {
+        "facebook_post_id": "{{response.id}}",
+        "facebook_post_url": "https://www.facebook.com/{{response.id}}"
+      }
+    },
+    {
+      "id": "supabase_webhook_callback",
+      "name": "Update Database",
+      "type": "http_request",
+      "description": "Send results back to Supabase via webhook",
+      "config": {
+        "method": "POST",
+        "url": "{{WEBHOOK_CALLBACK_URL}}",
+        "headers": {
+          "Content-Type": "application/json"
+        },
+        "body": {
+          "meeting_id": "{{meeting_id}}",
+          "video_id": "{{video_id}}",
+          "step": "{{current_step}}",
+          "data": {
+            "transcript": "{{transcript}}",
+            "summary": "{{summary}}",
+            "blog_content": "{{blog_content}}",
+            "keywords": "{{keywords}}",
+            "facebook_post_id": "{{facebook_post_id}}",
+            "facebook_post_url": "{{facebook_post_url}}"
+          },
+          "status": "completed"
+        }
+      }
+    }
+  ],
+  "workflow": [
+    {
+      "step": 1,
+      "module": "assembly_ai_transcription",
+      "description": "Upload video to Assembly AI",
+      "error_handling": {
+        "retry": 3,
+        "retry_delay": 5000
+      }
+    },
+    {
+      "step": 2,
+      "module": "assembly_ai_transcribe",
+      "description": "Start transcription process",
+      "error_handling": {
+        "retry": 3,
+        "retry_delay": 5000
+      }
+    },
+    {
+      "step": 3,
+      "module": "check_transcription_status",
+      "description": "Poll for transcription completion",
+      "condition": "{{status != 'completed'}}",
+      "loop": {
+        "max_iterations": 60,
+        "delay": 10000
+      },
+      "error_handling": {
+        "retry": 5,
+        "retry_delay": 10000
+      }
+    },
+    {
+      "step": 4,
+      "module": "supabase_webhook_callback",
+      "description": "Update database with transcription results",
+      "data_mapping": {
+        "current_step": "transcription_complete"
+      }
+    },
+    {
+      "step": 5,
+      "module": "openai_blog_generation",
+      "description": "Generate blog content",
+      "error_handling": {
+        "retry": 3,
+        "retry_delay": 5000
+      }
+    },
+    {
+      "step": 6,
+      "module": "openai_summary_generation",
+      "description": "Generate blog summary",
+      "error_handling": {
+        "retry": 3,
+        "retry_delay": 5000
+      }
+    },
+    {
+      "step": 7,
+      "module": "openai_keywords_extraction",
+      "description": "Extract keywords and hashtags",
+      "error_handling": {
+        "retry": 3,
+        "retry_delay": 5000
+      }
+    },
+    {
+      "step": 8,
+      "module": "supabase_webhook_callback",
+      "description": "Update database with blog content",
+      "data_mapping": {
+        "current_step": "blog_generation_complete"
+      }
+    },
+    {
+      "step": 9,
+      "module": "facebook_post_creation",
+      "description": "Post to Facebook",
+      "error_handling": {
+        "retry": 3,
+        "retry_delay": 5000
+      }
+    },
+    {
+      "step": 10,
+      "module": "supabase_webhook_callback",
+      "description": "Update database with Facebook post results",
+      "data_mapping": {
+        "current_step": "facebook_post_complete"
+      }
+    }
+  ],
+  "environment_variables": {
+    "ASSEMBLY_AI_API_KEY": "your_assembly_ai_api_key",
+    "OPENAI_API_KEY": "your_openai_api_key",
+    "FACEBOOK_ACCESS_TOKEN": "your_facebook_access_token",
+    "FACEBOOK_PAGE_ID": "your_facebook_page_id",
+    "WEBHOOK_CALLBACK_URL": "https://your-domain.com/api/webhook"
+  },
+  "error_handling": {
+    "global_retry": 3,
+    "global_retry_delay": 10000,
+    "notification_email": "admin@yourdomain.com",
+    "fallback_webhook": "https://your-domain.com/api/webhook/error"
+  },
+  "monitoring": {
+    "enable_logging": true,
+    "log_level": "INFO",
+    "performance_metrics": true,
+    "alert_thresholds": {
+      "execution_time": 300000,
+      "error_rate": 0.1
+    }
+  }
+} 
