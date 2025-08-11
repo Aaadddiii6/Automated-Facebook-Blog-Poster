@@ -97,6 +97,166 @@ class MeetingService:
             logger.error(f"Get meetings error: {str(e)}")
             return jsonify({'error': 'Failed to get meetings'}), 500
     
+    def get_meetings_with_transcripts(self, organization_id: str = None, limit: int = 100, offset: int = 0) -> Tuple[Dict[str, Any], int]:
+        """
+        Get meetings that have completed transcripts, optionally filtered by organization.
+
+        Args:
+            organization_id: Organization ID (optional)
+            limit: Number of meetings to return
+            offset: Number of meetings to skip
+
+        Returns:
+            Tuple[Dict[str, Any], int]: Response data and HTTP status code
+        """
+        try:
+            # First get meeting IDs that have transcripts in meeting_minutes table
+            minutes_query = self.db_client.table('meeting_minutes') \
+                .select('meeting_id,transcript,summary,created_at') \
+                .not_.is_('transcript', 'null') \
+                .neq('transcript', '') \
+                .order('created_at', desc=True)
+            
+            minutes_response = minutes_query.execute()
+            
+            if not minutes_response.data:
+                return jsonify({
+                    'meetings': [],
+                    'total': 0,
+                    'limit': limit,
+                    'offset': offset
+                }), 200
+            
+            # Get unique meeting IDs that have transcripts
+            meeting_ids = list(set([m['meeting_id'] for m in minutes_response.data if m.get('meeting_id')]))
+            
+            if not meeting_ids:
+                return jsonify({
+                    'meetings': [],
+                    'total': 0,
+                    'limit': limit,
+                    'offset': offset
+                }), 200
+            
+            # Now get meeting details for these IDs
+            meetings_query = self.db_client.table('meetings') \
+                .select('id,title,created_at,organization_id') \
+                .in_('id', meeting_ids) \
+                .order('created_at', desc=True)
+            
+            if organization_id:
+                meetings_query = meetings_query.eq('organization_id', organization_id)
+            
+            if limit is not None and offset is not None:
+                meetings_query = meetings_query.range(offset, offset + limit - 1)
+            
+            meetings_response = meetings_query.execute()
+            
+            # Get total count for pagination
+            count_query = self.db_client.table('meetings') \
+                .select('count', count='exact') \
+                .in_('id', meeting_ids)
+            if organization_id:
+                count_query = count_query.eq('organization_id', organization_id)
+            total = count_query.execute().count or 0
+            
+            # Combine meeting data with transcript info
+            meetings = []
+            for meeting in (meetings_response.data or []):
+                # Find corresponding transcript
+                transcript_data = next((m for m in minutes_response.data if m['meeting_id'] == meeting['id']), None)
+                if transcript_data:
+                    meeting['transcript'] = transcript_data.get('transcript', '')
+                    meeting['summary'] = transcript_data.get('summary', '')
+                    meeting['transcript_created_at'] = transcript_data.get('created_at', '')
+                    meetings.append(meeting)
+            
+            return jsonify({
+                'meetings': meetings,
+                'total': total,
+                'limit': limit,
+                'offset': offset
+            }), 200
+
+        except Exception as e:
+            logger.error(f"Get meetings with transcripts error: {str(e)}")
+            return jsonify({'error': 'Failed to get meetings with transcripts'}), 500
+
+    def get_transcribed_meeting_options(self, organization_id: str = None, limit: int = 100, offset: int = 0) -> Tuple[Dict[str, Any], int]:
+        """
+        Get compact option list for dropdowns: [{ value, label }]
+
+        Args:
+            organization_id: Organization ID (optional)
+            limit: Number of options to return
+            offset: Number of options to skip
+
+        Returns:
+            Tuple[Dict[str, Any], int]: Response data and HTTP status code
+        """
+        try:
+            # First get meeting IDs that have transcripts in meeting_minutes table
+            minutes_query = self.db_client.table('meeting_minutes') \
+                .select('meeting_id,transcript') \
+                .not_.is_('transcript', 'null') \
+                .neq('transcript', '') \
+                .order('created_at', desc=True)
+            
+            minutes_response = minutes_query.execute()
+            
+            if not minutes_response.data:
+                return jsonify({
+                    'options': [],
+                    'total': 0,
+                    'limit': limit,
+                    'offset': offset
+                }), 200
+            
+            # Get unique meeting IDs that have transcripts
+            meeting_ids = list(set([m['meeting_id'] for m in minutes_response.data if m.get('meeting_id')]))
+            
+            if not meeting_ids:
+                return jsonify({
+                    'options': [],
+                    'total': 0,
+                    'limit': limit,
+                    'offset': offset
+                }), 200
+            
+            # Now get meeting details for these IDs
+            meetings_query = self.db_client.table('meetings') \
+                .select('id,title,created_at,organization_id') \
+                .in_('id', meeting_ids) \
+                .order('created_at', desc=True)
+            
+            if organization_id:
+                meetings_query = meetings_query.eq('organization_id', organization_id)
+            
+            if limit is not None and offset is not None:
+                meetings_query = meetings_query.range(offset, offset + limit - 1)
+            
+            meetings_response = meetings_query.execute()
+            
+            # Create dropdown options
+            options = []
+            for meeting in (meetings_response.data or []):
+                title = meeting.get('title') or f"Meeting {meeting['id'][:8]}"
+                options.append({
+                    'value': meeting['id'], 
+                    'label': title
+                })
+            
+            return jsonify({
+                'options': options,
+                'total': len(options),
+                'limit': limit,
+                'offset': offset
+            }), 200
+
+        except Exception as e:
+            logger.error(f"Get transcribed meeting options error: {str(e)}")
+            return jsonify({'error': 'Failed to get transcribed meeting options'}), 500
+
     def get_meeting(self, meeting_id: str) -> Tuple[Dict[str, Any], int]:
         """
         Get specific meeting details

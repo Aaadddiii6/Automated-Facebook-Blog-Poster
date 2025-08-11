@@ -272,6 +272,44 @@ def create_app():
         
         return meeting_service.get_meetings(organization_id, limit, offset)
     
+    @app.route('/api/meetings/transcribed', methods=['GET'])
+    def get_meetings_with_transcripts():
+        """
+        Get list of meetings that have completed transcripts
+
+        Query parameters:
+        - organization_id: Filter by organization (optional)
+        - limit: Number of records to return (default: 100)
+        - offset: Number of records to skip (default: 0)
+
+        Returns:
+        - 200: List of meetings with completed transcripts
+        - 500: Server error
+        """
+        organization_id = request.args.get('organization_id')
+        limit = int(request.args.get('limit', 100))
+        offset = int(request.args.get('offset', 0))
+        return meeting_service.get_meetings_with_transcripts(organization_id, limit, offset)
+
+    @app.route('/api/meetings/transcribed/options', methods=['GET'])
+    def get_transcribed_meeting_options():
+        """
+        Get compact options for dropdowns: [{ value, label }]
+
+        Query parameters:
+        - organization_id: Filter by organization (optional)
+        - limit: Number of records to return (default: 100)
+        - offset: Number of records to skip (default: 0)
+
+        Returns:
+        - 200: Options list
+        - 500: Server error
+        """
+        organization_id = request.args.get('organization_id')
+        limit = int(request.args.get('limit', 100))
+        offset = int(request.args.get('offset', 0))
+        return meeting_service.get_transcribed_meeting_options(organization_id, limit, offset)
+
     @app.route('/api/meetings/<meeting_id>', methods=['GET'])
     def get_meeting(meeting_id):
         """

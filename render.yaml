@@ -1,0 +1,58 @@
+services:
+  - type: web
+    name: makesupabase-backend
+    env: python
+    plan: starter
+    buildCommand: pip install -r backend/requirements.txt
+    startCommand: cd backend && gunicorn main:create_app() --bind 0.0.0.0:$PORT --workers 2 --timeout 120
+    envVars:
+      - key: PYTHON_VERSION
+        value: 3.9.16
+      - key: FLASK_ENV
+        value: production
+      - key: SECRET_KEY
+        generateValue: true
+      - key: PORT
+        value: 10000
+      - key: SUPABASE_URL
+        sync: false
+      - key: SUPABASE_ANON_KEY
+        sync: false
+      - key: SUPABASE_SERVICE_KEY
+        sync: false
+      - key: CLOUDINARY_CLOUD_NAME
+        sync: false
+      - key: CLOUDINARY_API_KEY
+        sync: false
+      - key: CLOUDINARY_API_SECRET
+        sync: false
+      - key: ASSEMBLY_AI_API_KEY
+        sync: false
+      - key: OPENAI_API_KEY
+        sync: false
+      - key: FACEBOOK_ACCESS_TOKEN
+        sync: false
+      - key: FACEBOOK_PAGE_ID
+        sync: false
+      - key: INSTAGRAM_ACCESS_TOKEN
+        sync: false
+      - key: INSTAGRAM_BUSINESS_ACCOUNT_ID
+        sync: false
+      - key: MAKE_WEBHOOK_URL
+        sync: false
+      - key: MAKE_WEBHOOK_SECRET
+        sync: false
+      - key: ALLOWED_ORIGINS
+        value: "*"
+      - key: MAX_FILE_SIZE
+        value: "524288000"
+      - key: STORAGE_PATH
+        value: "./storage/videos"
+      - key: ALLOWED_VIDEO_EXTENSIONS
+        value: "mp4,avi,mov,mkv,wmv,flv,webm"
+      - key: RATE_LIMIT_REQUESTS
+        value: "50"
+      - key: RATE_LIMIT_WINDOW
+        value: "3600"
+      - key: LOG_LEVEL
+        value: "INFO"

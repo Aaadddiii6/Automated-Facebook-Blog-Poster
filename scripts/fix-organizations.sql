@@ -20,7 +20,7 @@ END $$;
 -- Insert default organization if it doesn't exist
 INSERT INTO public.organizations (id, name, description, created_at)
 VALUES (
-    '123e4567-e89b-12d3-a456-426614174000',
+    '9a6ac03d-2a3e-42b3-9e1d-1047055cd7a9',
     'Default Organization',
     'Default organization for testing',
     '2024-01-01T00:00:00Z'

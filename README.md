@@ -6,10 +6,10 @@ A comprehensive system that automates the conversion of videos and meeting trans
 
 The system now supports two different workflows:
 
-1. **Video Upload Flow**: Upload video → Cloudinary → Assembly API → OpenAI → Facebook
-2. **Meeting ID Flow**: Meeting ID → Supabase → OpenAI → Facebook
+1. **Video Upload Flow**: Upload video → Cloudinary → Assembly API → OpenAI → Facebook → Instagram
+2. **Meeting ID Flow**: Meeting ID → Supabase → OpenAI → Facebook → Instagram
 
-Users can choose between uploading a video file or providing a meeting ID to fetch existing transcripts from Supabase.
+Users can choose between uploading a video file or providing a meeting ID to fetch existing transcripts from Supabase. Both flows now support posting to both Facebook and Instagram.
 
 ## 🚀 System Architecture
 
@@ -58,7 +58,8 @@ MAKESUPABASE/
 6. **Assembly AI**: Video transcribed using Assembly AI API
 7. **OpenAI Processing**: Transcript converted to blog content
 8. **Facebook Post**: Blog posted to Facebook page via Graph API
-9. **Status Updates**: Progress tracked and logged in database
+9. **Instagram Post**: Blog posted to Instagram via Graph API
+10. **Status Updates**: Progress tracked and logged in database
 
 ### Meeting ID Flow
 
@@ -68,7 +69,8 @@ MAKESUPABASE/
 4. **Make.com Trigger**: Webhook triggers content generation workflow
 5. **OpenAI Processing**: Transcript converted to blog content
 6. **Facebook Post**: Blog posted to Facebook page via Graph API
-7. **Status Updates**: Progress tracked and logged in database
+7. **Instagram Post**: Blog posted to Instagram via Graph API
+8. **Status Updates**: Progress tracked and logged in database
 
 ## 🛠️ Setup Instructions
 
@@ -78,7 +80,7 @@ MAKESUPABASE/
 - FFmpeg (for video processing)
 - Supabase account
 - Make.com account
-- API keys (Assembly AI, OpenAI, Facebook, Cloudinary)
+- API keys (Assembly AI, OpenAI, Facebook, Instagram, Cloudinary)
 
 ### Quick Start
 
@@ -162,6 +164,7 @@ python main.py
 - **OpenAI**: ~$0.02-0.05 per blog post
 - **Make.com**: ~$10-20/month (automation)
 - **Cloudinary**: ~$5-15/month (video storage)
+- **Instagram API**: Free (with rate limits)
 
 ## 🚀 Production Deployment
 
@@ -243,7 +246,7 @@ See `backend/.env` for all available configuration options:
 
 - **Flask Configuration**: Environment, secret key, port
 - **Supabase**: Database connection details
-- **API Keys**: Assembly AI, OpenAI, Facebook, Cloudinary
+- **API Keys**: Assembly AI, OpenAI, Facebook, Instagram, Cloudinary
 - **Make.com**: Webhook URLs and secrets
 - **Storage**: File paths and size limits
 - **Security**: CORS, rate limiting, origins
@@ -283,6 +286,12 @@ python main.py
 ## 📄 License
 
 MIT License - see LICENSE file for details
+
+## 📱 Instagram Integration
+
+For detailed Instagram integration instructions, see:
+
+- [Instagram Integration Guide](docs/instagram-integration-guide.md)
 
 ## 🆘 Support
 

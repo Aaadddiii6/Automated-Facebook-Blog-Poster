@@ -91,6 +91,9 @@ class WebhookService:
                 elif step == 'facebook_post_complete':
                     loop.run_until_complete(self._handle_facebook_post_complete(meeting_id, data))
                     
+                elif step == 'instagram_post_complete':
+                    loop.run_until_complete(self._handle_instagram_post_complete(meeting_id, data))
+                    
                 elif step == 'processing_error':
                     loop.run_until_complete(self._handle_processing_error(meeting_id, video_id, error))
                     
@@ -135,6 +138,7 @@ class WebhookService:
             'transcription_complete',
             'blog_generation_complete',
             'facebook_post_complete',
+            'instagram_post_complete',
             'processing_error'
         ]
         
@@ -296,6 +300,50 @@ class WebhookService:
         except Exception as e:
             logger.error(f"Error handling Facebook post complete: {str(e)}")
             raise
+
+    async def _handle_instagram_post_complete(self, meeting_id: str, data: Dict[str, Any]) -> None:
+        """
+        Handle Instagram post completion
+        
+        Args:
+            meeting_id: Meeting ID
+            data: Instagram post data
+        """
+        try:
+            blog_id = data.get('blog_id')
+            instagram_post_id = data.get('instagram_post_id')
+            instagram_post_url = data.get('instagram_post_url')
+            image_url = data.get('image_url')
+            
+            # Update blog post with Instagram details
+            await self._update_blog_post_instagram(
+                blog_id,
+                instagram_post_id,
+                instagram_post_url
+            )
+            
+            # Update poster/image with Instagram posting info if image was used
+            if image_url:
+                await self._update_poster_instagram_status(meeting_id, blog_id, image_url)
+            
+            # Log processing step
+            await self._log_processing_step(
+                meeting_id,
+                'instagram_post',
+                'completed',
+                {
+                    'blog_id': blog_id,
+                    'instagram_post_id': instagram_post_id,
+                    'instagram_post_url': instagram_post_url,
+                    'image_used': bool(image_url)
+                }
+            )
+            
+            logger.info(f"Instagram post completed for meeting: {meeting_id}")
+            
+        except Exception as e:
+            logger.error(f"Error handling Instagram post complete: {str(e)}")
+            raise
     
     async def _handle_processing_error(self, meeting_id: str, video_id: str = None, error: str = None) -> None:
         """
@@ -386,6 +434,23 @@ class WebhookService:
             logger.error(f"Error updating blog post Facebook details: {str(e)}")
             raise
     
+    async def _update_blog_post_instagram(self, blog_id: str, instagram_post_id: str, instagram_post_url: str) -> Dict[str, Any]:
+        """Update blog post with Instagram post details"""
+        try:
+            update_data = {
+                'instagram_post_id': instagram_post_id,
+                'instagram_post_url': instagram_post_url
+            }
+            response = self.db_client.table('blog_posts').update(update_data).eq('id', blog_id).execute()
+            if response.data:
+                logger.info(f"Updated blog post Instagram details: {blog_id}")
+                return response.data[0]
+            else:
+                raise Exception("Failed to update blog post Instagram details")
+        except Exception as e:
+            logger.error(f"Error updating blog post Instagram details: {str(e)}")
+            raise
+    
     async def _store_generated_image(self, meeting_id: str, blog_id: str, image_url: str, generation_prompt: str = '', image_type: str = 'poster') -> Dict[str, Any]:
         """Store generated image/poster - Note: posters table doesn't exist in current schema"""
         try:
@@ -404,6 +469,16 @@ class WebhookService:
             return {'status': 'logged'}
         except Exception as e:
             logger.error(f"Error logging poster Facebook status: {str(e)}")
+            raise
+    
+    async def _update_poster_instagram_status(self, meeting_id: str, blog_id: str, image_url: str) -> Dict[str, Any]:
+        """Update poster with Instagram posting status - Note: posters table doesn't exist"""
+        try:
+            # Since posters table doesn't exist, we'll just log it
+            logger.info(f"Poster Instagram status update for meeting {meeting_id}: {image_url}")
+            return {'status': 'logged'}
+        except Exception as e:
+            logger.error(f"Error logging poster Instagram status: {str(e)}")
             raise
     
     async def _log_processing_step(self, meeting_id: str, step: str, status: str, details: Dict[str, Any] = None) -> Dict[str, Any]:

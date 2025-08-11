@@ -42,7 +42,7 @@ ADD COLUMN IF NOT EXISTS created_at timestamp with time zone DEFAULT now();
 -- Insert a default organization for testing
 INSERT INTO public.organizations (id, name, description) 
 VALUES (
-  '123e4567-e89b-12d3-a456-426614174000',
+  '9a6ac03d-2a3e-42b3-9e1d-1047055cd7a9',
   'Default Organization',
   'Default organization for testing purposes'
 ) ON CONFLICT (id) DO NOTHING;
