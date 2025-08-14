@@ -1,5 +1,5 @@
 """
-Validation Service for Video-to-Blog Automation System
+Validation Service for Blog Automation System
 
 This module handles all input validation and sanitization including:
 - File type validation
@@ -33,38 +33,12 @@ class ValidationService:
     
     def __init__(self):
         """Initialize validation service"""
-        self.allowed_video_extensions = {'.mp4', '.avi', '.mov', '.mkv', '.wmv', '.flv', '.webm'}
-        self.max_file_size = 500 * 1024 * 1024  # 500MB
         self.max_title_length = 255
         self.max_content_length = 10000
     
-    def is_valid_video_file(self, filename: str) -> bool:
-        """
-        Validate video file extension
-        
-        Args:
-            filename: File name to validate
-            
-        Returns:
-            bool: True if valid video file, False otherwise
-        """
-        if not filename:
-            return False
-        
-        file_extension = filename.lower().rsplit('.', 1)[1] if '.' in filename else ''
-        return f'.{file_extension}' in self.allowed_video_extensions
+
     
-    def is_valid_file_size(self, file_size: int) -> bool:
-        """
-        Validate file size
-        
-        Args:
-            file_size: File size in bytes
-            
-        Returns:
-            bool: True if file size is acceptable, False otherwise
-        """
-        return 0 < file_size <= self.max_file_size
+
     
     def validate_meeting_data(self, data: Dict[str, Any]) -> Tuple[bool, Optional[str]]:
         """
@@ -131,13 +105,10 @@ class ValidationService:
             if not self._is_valid_uuid(data['meeting_id']):
                 return False, "Invalid meeting ID format"
             
-            # Check for video_id when needed
+            # Check for source in data when needed
             if data['step'] in ['transcription_complete', 'processing_error']:
-                if 'video_id' not in data or not data['video_id']:
-                    return False, "video_id is required for this step"
-                
-                if not self._is_valid_uuid(data['video_id']):
-                    return False, "Invalid video ID format"
+                if 'source' not in data.get('data', {}):
+                    return False, "data.source is required for this step"
             
             return True, None
             

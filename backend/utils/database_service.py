@@ -1,5 +1,5 @@
 """
-Database Service for Video-to-Blog Automation System
+Database Service for Blog Automation System
 
 This module handles all database operations and queries including:
 - Database connection testing

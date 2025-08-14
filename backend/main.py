@@ -1,5 +1,5 @@
 """
-Main Flask application for Video-to-Blog Automation System
+Main Flask application for Blog Automation System
 
 This module contains:
 - Flask application initialization
@@ -20,11 +20,11 @@ import signal
 import sys
 
 # Import business logic from utils
-from utils.upload_service import UploadService
+
 from utils.webhook_service import WebhookService
 from utils.meeting_service import MeetingService
 from utils.meeting_processor_service import MeetingProcessorService
-from utils.video_processor import VideoProcessor
+
 from utils.database_service import DatabaseService
 
 # Load environment variables
@@ -49,11 +49,11 @@ def create_app():
     CORS(app, origins=os.getenv('ALLOWED_ORIGINS', '*').split(','))
     
     # Initialize services
-    upload_service = UploadService()
+    
     webhook_service = WebhookService()
     meeting_service = MeetingService()
     meeting_processor_service = MeetingProcessorService()
-    video_processor = VideoProcessor()
+
     db_service = DatabaseService()
     
     # Health check endpoint
@@ -80,36 +80,7 @@ def create_app():
                 'version': '1.0.0'
             }), 503
     
-    # Video Upload Routes
-    @app.route('/api/upload', methods=['POST'])
-    def upload_video():
-        """
-        Upload video file endpoint
-        
-        Expected form data:
-        - file: Video file
-        - title: Meeting title (optional)
-        - description: Meeting description (optional)
-        - organization_id: Organization ID (optional)
-        
-        Returns:
-        - 200: Upload successful
-        - 400: Invalid request
-        - 413: File too large
-        - 500: Server error
-        """
-        # Process the upload asynchronously
-        import asyncio
-        loop = asyncio.new_event_loop()
-        asyncio.set_event_loop(loop)
-        
-        try:
-            result, status_code = loop.run_until_complete(
-                upload_service.handle_video_upload(request)
-            )
-            return result, status_code
-        finally:
-            loop.close()
+
     
     # Meeting ID Processing Routes
     @app.route('/api/process-meeting', methods=['POST'])
@@ -176,12 +147,11 @@ def create_app():
     @app.route('/api/webhook', methods=['POST'])
     def webhook_handler():
         """
-        Universal Make.com webhook handler (handles both flows)
+        Universal Make.com webhook handler
         
         Expected JSON payload:
         {
             "meeting_id": "uuid",
-            "video_id": "uuid", 
             "step": "transcription_complete|blog_generation_complete|facebook_post_complete|processing_error",
             "data": {...},
             "error": "error message" (optional)
@@ -194,32 +164,7 @@ def create_app():
         """
         return webhook_service.handle_webhook(request)
     
-    @app.route('/api/webhook/video-upload', methods=['POST'])
-    def video_upload_webhook_handler():
-        """
-        Video Upload Flow webhook handler
-        
-        This endpoint is specifically for the video upload flow:
-        1. Video uploaded to Cloudinary
-        2. Assembly AI processes video
-        3. OpenAI generates blog and images
-        4. Facebook posting
-        
-        Expected JSON payload:
-        {
-            "meeting_id": "uuid",
-            "video_id": "uuid", 
-            "step": "transcription_complete|blog_generation_complete|facebook_post_complete|processing_error",
-            "data": {...},
-            "error": "error message" (optional)
-        }
-        
-        Returns:
-        - 200: Webhook processed successfully
-        - 400: Invalid payload
-        - 500: Server error
-        """
-        return webhook_service.handle_webhook(request)
+
     
     @app.route('/api/webhook/meeting-id', methods=['POST'])
     def meeting_id_webhook_handler():
@@ -310,6 +255,17 @@ def create_app():
         offset = int(request.args.get('offset', 0))
         return meeting_service.get_transcribed_meeting_options(organization_id, limit, offset)
 
+    @app.route('/api/organizations/options', methods=['GET'])
+    def get_organization_options():
+        """
+        Get compact organization options for dropdowns: [{ value, label }]
+
+        Returns:
+        - 200: Organization options list
+        - 500: Server error
+        """
+        return meeting_service.get_organization_options()
+
     @app.route('/api/meetings/<meeting_id>', methods=['GET'])
     def get_meeting(meeting_id):
         """
@@ -325,65 +281,14 @@ def create_app():
         """
         return meeting_service.get_meeting(meeting_id)
     
-    # Video Routes
-    @app.route('/api/videos/<video_id>/info', methods=['GET'])
-    def get_video_info(video_id):
-        """
-        Get video file information
-        
-        Args:
-        - video_id: UUID of the video file
-        
-        Returns:
-        - 200: Video information
-        - 404: Video not found
-        - 500: Server error
-        """
-        return video_processor.get_video_info_by_id(video_id)
+
     
-    # Video file serving endpoint (for Make.com and Assembly AI)
-    @app.route('/api/videos/<video_id>/file', methods=['GET'])
-    def serve_video_file(video_id):
-        """
-        Serve video file for external access (Make.com, Assembly AI)
-        
-        Args:
-        - video_id: UUID of the video file
-        
-        Returns:
-        - 200: Video file stream
-        - 404: Video not found
-        - 500: Server error
-        """
-        try:
-            # Get video info from database
-            response = video_processor.get_video_info_by_id(video_id)
-            
-            if response[1] != 200:  # Check status code
-                return response
-            
-            video_data = response[0].json
-            file_path = video_data.get('file_path')
-            
-            if not file_path or not os.path.exists(file_path):
-                return jsonify({'error': 'Video file not found'}), 404
-            
-            # Serve the video file
-            return send_file(
-                file_path,
-                mimetype='video/mp4',
-                as_attachment=False,
-                download_name=os.path.basename(file_path)
-            )
-            
-        except Exception as e:
-            logger.error(f"Error serving video file: {str(e)}")
-            return jsonify({'error': 'Failed to serve video file'}), 500
+
     
     # Frontend Routes
     @app.route('/', methods=['GET'])
     def serve_upload_page():
-        """Serve the video upload page"""
+        """Serve the content generation page"""
         return send_from_directory('../frontend', 'upload.html')
     
     @app.route('/dashboard', methods=['GET'])

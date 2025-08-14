@@ -1,5 +1,5 @@
 """
-Database connection module for Video-to-Blog Automation System
+Database connection module for Blog Automation System
 
 This module is solely responsible for:
 - Initializing the Supabase database client

@@ -57,13 +57,13 @@ def test_database_connection():
 def test_imports():
     """Test if all modules can be imported"""
     try:
-        from utils.upload_service import UploadService
+        
         from utils.webhook_service import WebhookService
         from utils.meeting_service import MeetingService
-        from utils.video_processor import VideoProcessor
+        
         from utils.database_service import DatabaseService
         from utils.validation_service import ValidationService
-        from utils.file_manager import FileManager
+        
         
         print("✅ All utility modules imported successfully")
         return True

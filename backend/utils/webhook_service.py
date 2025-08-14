@@ -1,5 +1,5 @@
 """
-Webhook Service for Video-to-Blog Automation System
+Webhook Service for Blog Automation System
 
 This module handles all webhook callbacks from Make.com including:
 - Transcription completion
@@ -9,7 +9,6 @@ This module handles all webhook callbacks from Make.com including:
 
 Input Types:
 - meeting_id: String (required)
-- video_id: String (required)
 - step: String (required) - 'transcription_complete', 'blog_generation_complete', 'facebook_post_complete', 'processing_error'
 - data: Object (optional) - Step-specific data
 - status: String (optional)
@@ -68,7 +67,6 @@ class WebhookService:
             
             # Extract fields
             meeting_id = webhook_data.get('meeting_id')
-            video_id = webhook_data.get('video_id')
             step = webhook_data.get('step')
             data = webhook_data.get('data', {})
             status = webhook_data.get('status')
@@ -82,8 +80,7 @@ class WebhookService:
             
             try:
                 if step == 'transcription_complete':
-                    # Handle both video upload and meeting ID flows
-                    loop.run_until_complete(self._handle_transcription_complete(meeting_id, video_id, data))
+                    loop.run_until_complete(self._handle_transcription_complete(meeting_id, data))
                     
                 elif step == 'blog_generation_complete':
                     loop.run_until_complete(self._handle_blog_generation_complete(meeting_id, data))
@@ -95,7 +92,7 @@ class WebhookService:
                     loop.run_until_complete(self._handle_instagram_post_complete(meeting_id, data))
                     
                 elif step == 'processing_error':
-                    loop.run_until_complete(self._handle_processing_error(meeting_id, video_id, error))
+                    loop.run_until_complete(self._handle_processing_error(meeting_id, error))
                     
                 else:
                     logger.warning(f"Unknown webhook step: {step}")
@@ -148,45 +145,32 @@ class WebhookService:
                 'error': f'Invalid step: {webhook_data["step"]}. Valid steps: {", ".join(valid_steps)}'
             }
         
-        # Check for video_id when needed (only for video upload flow)
+        # Check for source in data for meeting ID flow
         if webhook_data['step'] in ['transcription_complete', 'processing_error']:
-            # Check if this is a video upload flow (has video_id) or meeting ID flow (has source)
-            if 'video_id' not in webhook_data and 'source' not in webhook_data.get('data', {}):
+            if 'source' not in webhook_data.get('data', {}):
                 return {
                     'is_valid': False,
-                    'error': 'Either video_id or data.source is required for this step'
-                }
-            
-            # If it's a video upload flow, video_id is required
-            if 'video_id' in webhook_data and not webhook_data['video_id']:
-                return {
-                    'is_valid': False,
-                    'error': 'video_id is required for video upload flow'
+                    'error': 'data.source is required for this step'
                 }
         
         return {'is_valid': True}
     
-    async def _handle_transcription_complete(self, meeting_id: str, video_id: str = None, data: Dict[str, Any] = None) -> None:
+    async def _handle_transcription_complete(self, meeting_id: str, data: Dict[str, Any] = None) -> None:
         """
         Handle transcription completion
         
         Args:
             meeting_id: Meeting ID
-            video_id: Video ID (optional for meeting ID flow)
             data: Transcription data containing transcript and summary
         """
         try:
             data = data or {}
             transcript = data.get('transcript', '')
             summary = data.get('summary', '')
-            source = data.get('source', 'video_upload')
+            source = data.get('source', 'meeting_id')
             
             # Update meeting with transcript and summary
             await self._update_meeting_transcript(meeting_id, transcript, summary)
-            
-            # Update video processing status only for video upload flow
-            if video_id and source == 'video_upload':
-                await self._update_video_processing_status(video_id, 'transcribed')
             
             # Log processing step
             await self._log_processing_step(
@@ -196,8 +180,7 @@ class WebhookService:
                 {
                     'transcript_length': len(transcript),
                     'summary_length': len(summary),
-                    'source': source,
-                    'video_id': video_id
+                    'source': source
                 }
             )
             
@@ -345,28 +328,22 @@ class WebhookService:
             logger.error(f"Error handling Instagram post complete: {str(e)}")
             raise
     
-    async def _handle_processing_error(self, meeting_id: str, video_id: str = None, error: str = None) -> None:
+    async def _handle_processing_error(self, meeting_id: str, error: str = None) -> None:
         """
         Handle processing errors
         
         Args:
             meeting_id: Meeting ID
-            video_id: Video ID (optional for meeting ID flow)
             error: Error message
         """
         try:
-            # Update video processing status only for video upload flow
-            if video_id:
-                await self._update_video_processing_status(video_id, 'error')
-            
             # Log processing step
             await self._log_processing_step(
                 meeting_id,
                 'error',
                 'failed',
                 {
-                    'error_message': error,
-                    'video_id': video_id
+                    'error_message': error
                 }
             )
             
@@ -394,15 +371,7 @@ class WebhookService:
             logger.error(f"Error updating meeting transcript: {str(e)}")
             raise
     
-    async def _update_video_processing_status(self, video_id: str, status: str) -> Dict[str, Any]:
-        """Update video processing status - Note: meeting_videos table doesn't have processing_status"""
-        try:
-            # Since meeting_videos table doesn't have processing_status, we'll just log it
-            logger.info(f"Video processing status update requested: {video_id} -> {status}")
-            return {'status': 'logged'}
-        except Exception as e:
-            logger.error(f"Error logging video processing status: {str(e)}")
-            raise
+
     
     async def _store_blog_post(self, blog_data: Dict[str, Any]) -> Dict[str, Any]:
         """Store generated blog post"""

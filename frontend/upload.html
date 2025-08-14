@@ -46,76 +46,6 @@
         font-size: 1.1rem;
       }
 
-      .mode-toggle {
-        display: flex;
-        background: #f8f9fa;
-        border-radius: 15px;
-        padding: 5px;
-        margin-bottom: 30px;
-        gap: 5px;
-      }
-
-      .mode-btn {
-        flex: 1;
-        padding: 12px 20px;
-        border: none;
-        border-radius: 10px;
-        background: transparent;
-        color: #666;
-        font-weight: 600;
-        cursor: pointer;
-        transition: all 0.3s ease;
-      }
-
-      .mode-btn.active {
-        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-        color: white;
-        box-shadow: 0 4px 15px rgba(102, 126, 234, 0.3);
-      }
-
-      .mode-btn:hover:not(.active) {
-        background: #e9ecef;
-        color: #333;
-      }
-
-      .upload-area {
-        border: 3px dashed #ddd;
-        border-radius: 15px;
-        padding: 40px;
-        text-align: center;
-        transition: all 0.3s ease;
-        cursor: pointer;
-        margin-bottom: 30px;
-      }
-
-      .upload-area:hover {
-        border-color: #667eea;
-        background-color: #f8f9ff;
-      }
-
-      .upload-area.dragover {
-        border-color: #667eea;
-        background-color: #f0f4ff;
-        transform: scale(1.02);
-      }
-
-      .upload-icon {
-        font-size: 4rem;
-        color: #667eea;
-        margin-bottom: 20px;
-      }
-
-      .upload-text {
-        font-size: 1.2rem;
-        color: #333;
-        margin-bottom: 10px;
-      }
-
-      .upload-subtext {
-        color: #666;
-        font-size: 0.9rem;
-      }
-
       .meeting-id-area {
         background: #f8f9ff;
         border: 2px solid #667eea;
@@ -172,10 +102,6 @@
         font-style: italic;
       }
 
-      .file-input {
-        display: none;
-      }
-
       .form-group {
         margin-bottom: 20px;
       }
@@ -188,7 +114,6 @@
       }
 
       .form-group input,
-      .form-group textarea,
       .form-group select {
         width: 100%;
         padding: 12px 15px;
@@ -199,15 +124,9 @@
       }
 
       .form-group input:focus,
-      .form-group textarea:focus,
       .form-group select:focus {
         outline: none;
         border-color: #667eea;
-      }
-
-      .form-group textarea {
-        resize: vertical;
-        min-height: 100px;
       }
 
       .submit-btn {
@@ -287,35 +206,6 @@
         border: 1px solid #bee5eb;
       }
 
-      .file-info {
-        display: none;
-        margin-top: 20px;
-        padding: 15px;
-        background-color: #f8f9fa;
-        border-radius: 10px;
-        border-left: 4px solid #667eea;
-      }
-
-      .file-info h4 {
-        color: #333;
-        margin-bottom: 10px;
-      }
-
-      .file-details {
-        display: grid;
-        grid-template-columns: 1fr 1fr;
-        gap: 10px;
-        font-size: 0.9rem;
-      }
-
-      .file-detail {
-        color: #666;
-      }
-
-      .file-detail strong {
-        color: #333;
-      }
-
       .loading {
         display: inline-block;
         width: 20px;
@@ -351,10 +241,6 @@
         text-decoration: underline;
       }
 
-      .hidden {
-        display: none !important;
-      }
-
       @media (max-width: 768px) {
         .container {
           padding: 20px;
@@ -362,14 +248,6 @@
 
         .header h1 {
           font-size: 2rem;
-        }
-
-        .upload-area {
-          padding: 30px 20px;
-        }
-
-        .file-details {
-          grid-template-columns: 1fr;
         }
       }
     </style>
@@ -379,115 +257,20 @@
       <div class="header">
         <h1>🎥 Content Generation</h1>
         <p>
-          Upload a video or enter a meeting ID to generate blog posts and social
-          media content
+          Generate blog posts and social media content from meeting transcripts
         </p>
       </div>
 
-      <div class="mode-toggle">
-        <button
-          class="mode-btn active"
-          id="videoModeBtn"
-          onclick="switchMode('video')"
-        >
-          📹 Video Upload
-        </button>
-        <button
-          class="mode-btn"
-          id="meetingModeBtn"
-          onclick="switchMode('meeting')"
-        >
-          🆔 Meeting ID
-        </button>
-      </div>
-
-      <!-- Video Upload Form -->
-      <form id="videoUploadForm">
-        <div class="upload-area" id="uploadArea">
-          <div class="upload-icon">📁</div>
-          <div class="upload-text">Drop your video file here</div>
-          <div class="upload-subtext">or click to browse</div>
-          <input
-            type="file"
-            id="videoFile"
-            class="file-input"
-            accept="video/*"
-            required
-          />
-        </div>
-
-        <div class="file-info" id="fileInfo">
-          <h4>📋 File Information</h4>
-          <div class="file-details">
-            <div class="file-detail">
-              <strong>Name:</strong> <span id="fileName"></span>
-            </div>
-            <div class="file-detail">
-              <strong>Size:</strong> <span id="fileSize"></span>
-            </div>
-            <div class="file-detail">
-              <strong>Type:</strong> <span id="fileType"></span>
-            </div>
-            <div class="file-detail">
-              <strong>Duration:</strong> <span id="fileDuration"></span>
-            </div>
-          </div>
-        </div>
-
-        <div class="form-group">
-          <label for="videoMeetingTitle">Meeting Title *</label>
-          <input
-            type="text"
-            id="videoMeetingTitle"
-            name="title"
-            required
-            placeholder="Enter meeting title"
-          />
-        </div>
-
-        <div class="form-group">
-          <label for="videoMeetingDescription">Description</label>
-          <textarea
-            id="videoMeetingDescription"
-            name="description"
-            placeholder="Brief description of the meeting"
-          ></textarea>
-        </div>
-
-        <div class="form-group">
-          <label for="videoOrganizationId">Organization ID *</label>
-          <input
-            type="text"
-            id="videoOrganizationId"
-            name="organizationId"
-            required
-            placeholder="Enter your organization ID"
-            value="9a6ac03d-2a3e-42b3-9e1d-1047055cd7a9"
-          />
-        </div>
-
-        <div class="form-group">
-          <label for="zoomMeetingId">Zoom Meeting ID (Optional)</label>
-          <input
-            type="text"
-            id="zoomMeetingId"
-            name="zoomMeetingId"
-            placeholder="Zoom meeting ID if available"
-          />
-        </div>
-
-        <button type="submit" class="submit-btn" id="videoUploadBtn">
-          <span id="videoUploadBtnText">🚀 Start Processing</span>
-        </button>
-      </form>
-
       <!-- Meeting ID Form -->
-      <form id="meetingIdForm" class="hidden">
+      <form id="meetingIdForm">
         <div class="meeting-id-area">
           <div class="meeting-id-icon">🆔</div>
           <div class="meeting-id-text">Select Meeting with Transcript</div>
           <div class="meeting-id-subtext">
-            Choose a meeting that has a completed transcript to generate content
+            Choose a meeting that has a completed transcript to generate
+            content.<br />
+            <strong>Tip:</strong> Select an organization to filter meetings, or
+            choose "All Organizations" to see everything.
           </div>
         </div>
 
@@ -507,15 +290,17 @@
         </div>
 
         <div class="form-group">
-          <label for="meetingIdOrganizationId">Organization ID *</label>
-          <input
-            type="text"
+          <label for="meetingIdOrganizationId">Organization (Optional)</label>
+          <select
             id="meetingIdOrganizationId"
             name="organizationId"
-            required
-            placeholder="Enter your organization ID"
-            value="9a6ac03d-2a3e-42b3-9e1d-1047055cd7a9"
-          />
+            class="meeting-dropdown"
+          >
+            <option value="">Loading organizations...</option>
+          </select>
+          <div class="dropdown-help">
+            Select an organization to filter meetings, or leave empty to see all
+          </div>
         </div>
 
         <button type="submit" class="submit-btn" id="meetingIdBtn">
@@ -540,196 +325,56 @@
     </div>
 
     <script>
-      let currentMode = "video";
-
-      // Mode switching
-      function switchMode(mode) {
-        currentMode = mode;
-
-        // Update button states
-        document
-          .getElementById("videoModeBtn")
-          .classList.toggle("active", mode === "video");
-        document
-          .getElementById("meetingModeBtn")
-          .classList.toggle("active", mode === "meeting");
-
-        // Show/hide forms
-        document
-          .getElementById("videoUploadForm")
-          .classList.toggle("hidden", mode !== "video");
-        document
-          .getElementById("meetingIdForm")
-          .classList.toggle("hidden", mode !== "meeting");
-
-        // Load meetings dropdown when switching to meeting mode
-        if (mode === "meeting") {
-          loadMeetingsDropdown();
-        }
-
-        // Reset forms and status
-        resetForms();
-      }
-
-      function resetForms() {
-        // Reset video form
-        document.getElementById("videoUploadForm").reset();
-        document.getElementById("fileInfo").style.display = "none";
-
-        // Reset meeting ID form
-        document.getElementById("meetingIdForm").reset();
-
-        // Hide status and progress
-        hideStatus();
-        document.getElementById("progressContainer").style.display = "none";
-        document.getElementById("dashboardLink").style.display = "none";
-      }
-
-      // Video upload functionality
-      const uploadArea = document.getElementById("uploadArea");
-      const fileInput = document.getElementById("videoFile");
-      const videoUploadForm = document.getElementById("videoUploadForm");
-      const videoUploadBtn = document.getElementById("videoUploadBtn");
-      const videoUploadBtnText = document.getElementById("videoUploadBtnText");
-
-      // Drag and drop functionality
-      uploadArea.addEventListener("dragover", (e) => {
-        e.preventDefault();
-        uploadArea.classList.add("dragover");
-      });
-
-      uploadArea.addEventListener("dragleave", () => {
-        uploadArea.classList.remove("dragover");
-      });
-
-      uploadArea.addEventListener("drop", (e) => {
-        e.preventDefault();
-        uploadArea.classList.remove("dragover");
-        const files = e.dataTransfer.files;
-        if (files.length > 0) {
-          fileInput.files = files;
-          handleFileSelect(files[0]);
-        }
-      });
-
-      uploadArea.addEventListener("click", () => {
-        fileInput.click();
-      });
-
-      fileInput.addEventListener("change", (e) => {
-        if (e.target.files.length > 0) {
-          handleFileSelect(e.target.files[0]);
-        }
-      });
-
-      function handleFileSelect(file) {
-        // Validate file type
-        if (!file.type.startsWith("video/")) {
-          showStatus("Please select a valid video file.", "error");
-          return;
-        }
-
-        // Validate file size (500MB limit)
-        const maxSize = 500 * 1024 * 1024; // 500MB
-        if (file.size > maxSize) {
-          showStatus("File size exceeds 500MB limit.", "error");
-          return;
-        }
-
-        // Display file information
-        document.getElementById("fileName").textContent = file.name;
-        document.getElementById("fileSize").textContent = formatFileSize(
-          file.size
-        );
-        document.getElementById("fileType").textContent = file.type;
-        document.getElementById("fileDuration").textContent = "Processing...";
-
-        document.getElementById("fileInfo").style.display = "block";
-
-        // Try to get video duration
-        const video = document.createElement("video");
-        video.preload = "metadata";
-        video.onloadedmetadata = () => {
-          document.getElementById("fileDuration").textContent = formatDuration(
-            video.duration
-          );
-        };
-        video.src = URL.createObjectURL(file);
-      }
-
       // Meeting ID form
       const meetingIdForm = document.getElementById("meetingIdForm");
       const meetingIdBtn = document.getElementById("meetingIdBtn");
       const meetingIdBtnText = document.getElementById("meetingIdBtnText");
 
-      // Video upload form submission
-      videoUploadForm.addEventListener("submit", async (e) => {
-        e.preventDefault();
-
-        const formData = new FormData();
-        const videoFile = fileInput.files[0];
-
-        if (!videoFile) {
-          showStatus("Please select a video file.", "error");
-          return;
-        }
-
-        formData.append("video", videoFile);
-        formData.append(
-          "meeting_title",
-          document.getElementById("videoMeetingTitle").value
-        );
-        formData.append(
-          "meeting_description",
-          document.getElementById("videoMeetingDescription").value
-        );
-        formData.append(
-          "organization_id",
-          document.getElementById("videoOrganizationId").value
-        );
-        formData.append(
-          "zoom_meeting_id",
-          document.getElementById("zoomMeetingId").value
-        );
-
-        // Disable form and show progress
-        videoUploadBtn.disabled = true;
-        videoUploadBtnText.innerHTML =
-          '<span class="loading"></span>Processing...';
-        document.getElementById("progressContainer").style.display = "block";
-        hideStatus();
-
-        try {
-          const response = await fetch("/api/upload", {
-            method: "POST",
-            body: formData,
-          });
-
-          const result = await response.json();
-
-          if (response.ok) {
-            showStatus(
-              `✅ Video uploaded successfully! Meeting ID: ${result.data.meeting_id}`,
-              "success"
-            );
-            document.getElementById("progressFill").style.width = "100%";
-            document.getElementById("progressText").textContent =
-              "Upload completed!";
-            document.getElementById("dashboardLink").style.display = "inline";
-          } else {
-            throw new Error(result.error || "Upload failed");
-          }
-        } catch (error) {
-          showStatus(`❌ Error: ${error.message}`, "error");
-          document.getElementById("progressFill").style.width = "0%";
-          document.getElementById("progressText").textContent = "Upload failed";
-        } finally {
-          videoUploadBtn.disabled = false;
-          videoUploadBtnText.textContent = "🚀 Start Processing";
-        }
+      // Load dropdowns when page loads
+      document.addEventListener("DOMContentLoaded", function () {
+        loadOrganizationDropdown();
+        loadMeetingsDropdown();
       });
 
-      // Load meetings dropdown when meeting mode is selected
+      // Load meetings dropdown when organization changes
+      document
+        .getElementById("meetingIdOrganizationId")
+        .addEventListener("change", function () {
+          loadMeetingsDropdown();
+        });
+
+      // Load organization dropdown
+      async function loadOrganizationDropdown() {
+        const orgDropdown = document.getElementById("meetingIdOrganizationId");
+
+        try {
+          orgDropdown.innerHTML =
+            '<option value="">Loading organizations...</option>';
+
+          const response = await fetch("/api/organizations/options");
+          const data = await response.json();
+
+          if (response.ok && data.options && data.options.length > 0) {
+            orgDropdown.innerHTML =
+              '<option value="">All Organizations</option>';
+            data.options.forEach((option) => {
+              const optionElement = document.createElement("option");
+              optionElement.value = option.value;
+              optionElement.textContent = option.label;
+              orgDropdown.appendChild(optionElement);
+            });
+          } else {
+            orgDropdown.innerHTML =
+              '<option value="">No organizations found</option>';
+          }
+        } catch (error) {
+          console.error("Error loading organizations:", error);
+          orgDropdown.innerHTML =
+            '<option value="">Error loading organizations</option>';
+        }
+      }
+
+      // Load meetings dropdown
       async function loadMeetingsDropdown() {
         const meetingDropdown = document.getElementById("meetingId");
         const organizationId = document.getElementById(
@@ -754,6 +399,10 @@
               const optionElement = document.createElement("option");
               optionElement.value = option.value;
               optionElement.textContent = option.label;
+              // Store organization ID in dataset for later use
+              if (option.organization_id) {
+                optionElement.dataset.organizationId = option.organization_id;
+              }
               meetingDropdown.appendChild(optionElement);
             });
           } else {
@@ -771,9 +420,7 @@
       document
         .getElementById("meetingIdOrganizationId")
         .addEventListener("change", function () {
-          if (currentMode === "meeting") {
-            loadMeetingsDropdown();
-          }
+          loadMeetingsDropdown();
         });
 
       // Meeting ID form submission
@@ -781,7 +428,7 @@
         e.preventDefault();
 
         const meetingId = document.getElementById("meetingId").value;
-        const organizationId = document.getElementById(
+        const selectedOrgId = document.getElementById(
           "meetingIdOrganizationId"
         ).value;
 
@@ -793,6 +440,31 @@
           meetingId === "Error loading meetings"
         ) {
           showStatus("Please select a meeting from the dropdown.", "error");
+          return;
+        }
+
+        // Get the organization ID from the selected meeting
+        let organizationId = selectedOrgId;
+        if (!selectedOrgId) {
+          // If "All Organizations" is selected, we need to get the org ID from the meeting
+          const meetingOption = document.querySelector(
+            `#meetingId option[value="${meetingId}"]`
+          );
+          if (meetingOption) {
+            // Extract organization ID from the meeting data
+            // We'll need to store this when loading meetings
+            const meetingData = meetingOption.dataset.organizationId;
+            if (meetingData) {
+              organizationId = meetingData;
+            }
+          }
+        }
+
+        if (!organizationId) {
+          showStatus(
+            "Unable to determine organization ID for this meeting. Please select a specific organization.",
+            "error"
+          );
           return;
         }
 
@@ -839,29 +511,6 @@
           meetingIdBtnText.textContent = "🚀 Generate Content";
         }
       });
-
-      function formatFileSize(bytes) {
-        if (bytes === 0) return "0 Bytes";
-        const k = 1024;
-        const sizes = ["Bytes", "KB", "MB", "GB"];
-        const i = Math.floor(Math.log(bytes) / Math.log(k));
-        return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + " " + sizes[i];
-      }
-
-      function formatDuration(seconds) {
-        if (!seconds) return "Unknown";
-        const hours = Math.floor(seconds / 3600);
-        const minutes = Math.floor((seconds % 3600) / 60);
-        const secs = Math.floor(seconds % 60);
-
-        if (hours > 0) {
-          return `${hours}:${minutes.toString().padStart(2, "0")}:${secs
-            .toString()
-            .padStart(2, "0")}`;
-        } else {
-          return `${minutes}:${secs.toString().padStart(2, "0")}`;
-        }
-      }
 
       function showStatus(message, type) {
         const statusContainer = document.getElementById("statusContainer");

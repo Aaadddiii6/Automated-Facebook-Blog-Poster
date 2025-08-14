@@ -1,5 +1,5 @@
 """
-Meeting Service for Video-to-Blog Automation System
+Meeting Service for Blog Automation System
 
 This module handles all meeting management operations including:
 - Getting meeting details
@@ -243,7 +243,8 @@ class MeetingService:
                 title = meeting.get('title') or f"Meeting {meeting['id'][:8]}"
                 options.append({
                     'value': meeting['id'], 
-                    'label': title
+                    'label': title,
+                    'organization_id': meeting.get('organization_id')
                 })
             
             return jsonify({
@@ -256,6 +257,63 @@ class MeetingService:
         except Exception as e:
             logger.error(f"Get transcribed meeting options error: {str(e)}")
             return jsonify({'error': 'Failed to get transcribed meeting options'}), 500
+
+    def get_organization_options(self) -> Tuple[Dict[str, Any], int]:
+        """
+        Get compact organization options for dropdowns: [{ value, label }]
+
+        Returns:
+            Tuple[Dict[str, Any], int]: Response data and HTTP status code
+        """
+        try:
+            # Get all unique organization IDs from meetings table
+            response = self.db_client.table('meetings') \
+                .select('organization_id') \
+                .not_.is_('organization_id', 'null') \
+                .execute()
+            
+            if not response.data:
+                return jsonify({
+                    'options': [],
+                    'total': 0
+                }), 200
+            
+            # Get unique organization IDs, filtering out empty strings and None values
+            org_ids = list(set([
+                m['organization_id'] for m in response.data 
+                if m.get('organization_id') and m['organization_id'].strip() != ''
+            ]))
+            
+            # Create dropdown options
+            options = []
+            for org_id in org_ids:
+                # Get organization name if available, otherwise use ID
+                org_response = self.db_client.table('organizations') \
+                    .select('name') \
+                    .eq('id', org_id) \
+                    .execute()
+                
+                if org_response.data and org_response.data[0].get('name'):
+                    label = org_response.data[0]['name']
+                else:
+                    label = f"Organization {org_id[:8]}..."
+                
+                options.append({
+                    'value': org_id,
+                    'label': label
+                })
+            
+            # Sort by label
+            options.sort(key=lambda x: x['label'])
+            
+            return jsonify({
+                'options': options,
+                'total': len(options)
+            }), 200
+
+        except Exception as e:
+            logger.error(f"Get organization options error: {str(e)}")
+            return jsonify({'error': 'Failed to get organization options'}), 500
 
     def get_meeting(self, meeting_id: str) -> Tuple[Dict[str, Any], int]:
         """
@@ -274,13 +332,11 @@ class MeetingService:
                 return jsonify({'error': 'Meeting not found'}), 404
             
             # Get related data
-            video_files = self._get_video_files_by_meeting(meeting_id)
             blog_posts = self._get_blog_posts_by_meeting(meeting_id)
             processing_logs = self._get_processing_logs_by_meeting(meeting_id)
             
             meeting_data = {
                 'meeting': meeting,
-                'video_files': video_files,
                 'blog_posts': blog_posts,
                 'processing_logs': processing_logs
             }
@@ -328,17 +384,7 @@ class MeetingService:
             logger.error(f"Error getting meetings count: {str(e)}")
             raise
     
-    def _get_video_files_by_meeting(self, meeting_id: str) -> List[Dict[str, Any]]:
-        """Get video files for a meeting"""
-        try:
-            response = self.db_client.table('video_files')\
-                .select('*')\
-                .eq('meeting_id', meeting_id)\
-                .execute()
-            return response.data or []
-        except Exception as e:
-            logger.error(f"Error getting video files by meeting: {str(e)}")
-            raise
+
     
     def _get_blog_posts_by_meeting(self, meeting_id: str) -> List[Dict[str, Any]]:
         """Get blog posts for a meeting"""
